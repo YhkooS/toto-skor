@@ -1,9 +1,14 @@
 import { Queue } from 'bullmq';
 import { RedisOptions } from 'ioredis';
 
+const redisUrl = process.env.REDISCLOUD_URL || 'redis://localhost:6379';
+const url = new URL(redisUrl);
+
 const redisOptions: RedisOptions = {
-  host: 'localhost',
-  port: 6379,
+    host: url.hostname || 'localhost',
+    port: parseInt(url.port || '6379'),
+    password: url.password || undefined,
+    username: url.username || undefined,
 };
 
 const totoQueue = new Queue('totoQueue', { connection: redisOptions });
