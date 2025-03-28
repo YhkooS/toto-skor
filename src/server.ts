@@ -11,7 +11,7 @@ app.use(express.json())
 
 
 // api rotaları dahil et
-app.use("/toto", totoRouter)
+app.use("/toto-skor", totoRouter)
 
 
 const PORT = process.env.PORT || 5000

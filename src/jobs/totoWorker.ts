@@ -1,13 +1,14 @@
 import { Worker } from 'bullmq';
 import { totoQueue } from './totoQueue';
-import { fetchClientById, fetchClientBet, fetchClientGetTransactions } from '../services/betcoService'
-import { error } from 'console';
-import { cli } from 'winston/lib/winston/config';
+import { fetchClientById, fetchClientBet, fetchClientGetTransactions, addBonus, addCash } from '../services/betcoService'
+import { add } from 'winston';
+
 
 const worker = new Worker('totoQueue', async (job) => {
     const { toto, prizes, contenders } = job.data;
     const { startDate, endDate } = toto;
-   
+    const { rightGuess7, rightGuess8, rightGuess9, rightGuess10 } = prizes
+
     for(const contender of contenders){
         const { username, correctGuessCount } = contender;
         console.log (`Kullanıcı adı: ${username}, Doğru tahmin sayısı: ${correctGuessCount}`)
@@ -27,24 +28,48 @@ const worker = new Worker('totoQueue', async (job) => {
                 const end = new Date(endDate)
                 const transactionDeposit = await fetchClientGetTransactions(clientId,start,end)
                 
-                
+            
             if (transactionDeposit.length === 0) {
                 console.log(`${username} için yatırım bulunmamaktadır ödül alamaz`);
             } else {
-                const depositAmount = transactionDeposit[0].Amount;
-                console.log(`${username} için yatırım miktarı: ${depositAmount} tl`);
-                if (depositAmount >= 250) {
+                const hasLargeDeposit = transactionDeposit.some(deposit => deposit.Amount >= 250);
+                
+                if (hasLargeDeposit) {
+                    console.log(`${username} 250 tl veya üzeri yatırım mevcut `);
                     if(betCount === 0){
-                        if (userBalance < 10){
-                            console.log(`${username} için tüm şartlar uyuyor ödül alabilir.`)
-                        }
                         console.log(`${username} açık bahis bulunmamaktadır`)
+                        if (userBalance < 10){
+                            console.log(`${username} için bakiye 10tl altıdır. Tüm şartlar uyuyor ödül alabilir.`)
+
+                            // ödül ekle
+                            if (correctGuessCount === 7) {
+                                const { amount } = rightGuess7
+                                const bonusId = 139979
+                                const bonusAdd = await addBonus(clientId, bonusId, amount)
+                            }
+
+                            if (correctGuessCount === 8) {
+                                const { amount } = rightGuess8
+                                const cashAdd = await addCash(clientId,amount)
+                            }
+
+                            if (correctGuessCount === 9) {
+                                const { amount } = rightGuess9
+                                const cashAdd = await addCash(clientId,amount)
+                            }
+
+                            if (correctGuessCount === 10) {
+                                const { amount } = rightGuess10
+                                const cashAdd = await addCash(clientId,amount)
+                            }
+
+                        }
                     } else {
                         console.log(`${username} açık bahis mevcut`)
                     }
-                    console.log(`${username} 250 tl veya üzeri yatırım mevcut `);
+                    
                 } else {
-                    console.log(`${username} yatırımı 250'tlden az`);
+                    console.log(`${username} yatırımı 250tl'den az`);
                 }
             }
                 

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { totoQueue } from "../jobs/totoQueue";
+import { skorQueue, totoQueue } from "../jobs/totoQueue";
 
 const addTotoJob = async (req: Request, res: Response): Promise<void> => {
     const { toto, prizes, contenders } = req.body;
@@ -21,4 +21,25 @@ const addTotoJob = async (req: Request, res: Response): Promise<void> => {
     }
 };
 
+const addSkorJob = async (req: Request, res: Response): Promise<void> => {
+    const { match, prize, winners} = req.body
+
+    if (!match || !winners) {
+        res.status(400).json({ message: "match winners bilgisi gerekli" });
+        return;
+    }
+    try{
+        const job = await skorQueue.add("processSkor", { match, prize, winners });
+        res.status(200).json({ message: "Toto job sıraya eklendi", jobId: job.id });
+
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            res.status(500).json({ message: "jobı sıraya eklerken hata oluştu", error: error.message });
+        } else {
+            res.status(500).json({ message: "bilinmeyen hata" });
+        }
+    }
+}
+
+export { addSkorJob };
 export { addTotoJob };

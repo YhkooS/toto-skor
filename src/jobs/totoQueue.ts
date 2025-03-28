@@ -12,6 +12,7 @@ const redisOptions: RedisOptions = {
 };
 
 const totoQueue = new Queue('totoQueue', { connection: redisOptions });
-
+const skorQueue = new Queue('skorQueue', { connection: redisOptions })
 
 export { totoQueue };
+export { skorQueue }
